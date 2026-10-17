@@ -160,7 +160,9 @@ final class EqualizerRenderer {
         switch options.style {
         case .spectrum:
             let v = band(at: p)
-            return paint(p: p, v: v, options, time, speed, color) * (v * v)
+            let base: RGB = paint(p: p, v: v, options, time, speed, color)
+            let k: Float = v * v
+            return base * k
 
         case .bars:
             // As many bars as fit with ~3 LEDs each would be ideal; 8 keeps them readable on short strips.
@@ -182,7 +184,9 @@ final class EqualizerRenderer {
         case .flashes:
             let v = band(at: p)
             let f = max(0, (v - 0.55) / 0.45)
-            return paint(p: p, v: v, options, time, speed, color).mix(.white, f * f * 0.5) * (f * f)
+            let k: Float = f * f
+            let base: RGB = paint(p: p, v: v, options, time, speed, color).mix(RGB.white, k * 0.5)
+            return base * k
         }
     }
 

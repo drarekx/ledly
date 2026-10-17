@@ -216,7 +216,9 @@ final class EffectRenderer {
                 levels[i] = max(0, levels[i] - dt * 3)
                 if Float.random(in: 0...1, using: &rng) < dt * 0.6 * Float(speed) { levels[i] = 1 }
                 let l = levels[i]
-                out[i] = color.mix(.white, l * l) * (l * l)
+                let glow: Float = l * l
+                let spark: RGB = color.mix(RGB.white, glow)
+                out[i] = spark * glow
             }
 
         case .moodBlobs:
