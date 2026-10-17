@@ -1,0 +1,44 @@
+name: Build
+
+# Compiles Ledly for Apple Silicon and Intel on every pull request and push to main.
+# Required status check for merging into main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (arm64 + x86_64)
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Check translations
+        run: |
+          python3 - <<'EOF'
+          import re, sys
+          s = open("Sources/Ledly/Localization.swift").read()
+          en = s[s.index("static let en"):s.index("static let ca")]
+          ca = s[s.index("static let ca"):]
+          keys = lambda t: set(re.findall(r'^\s*"((?:[^"\\]|\\.)*)":', t, re.M))
+          E, C = keys(en), keys(ca)
+          missing = (E - C) | (C - E)
+          used = set()
+          import glob
+          for f in glob.glob("Sources/Ledly/*.swift"):
+              used |= set(re.findall(r'\btr\("((?:[^"\\]|\\.)*)"', open(f).read()))
+          untranslated = used - E
+          for k in sorted(missing): print("Only in one table:", k)
+          for k in sorted(untranslated): print("tr() key without translation:", k)
+          sys.exit(1 if missing or untranslated else 0)
+          EOF
