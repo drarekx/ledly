@@ -1,4 +1,5 @@
 import AppKit
+import ScreenCaptureKit
 import SwiftUI
 
 enum MainSection: Hashable {
@@ -438,6 +439,8 @@ private struct HomePane: View {
         banner(icon: "lock.shield", text: tr("Ledly necesita permiso de Grabación de pantalla para leer los colores. Actívalo y vuelve a abrir la app."),
                action: (tr("Abrir Ajustes"), {
                    CGRequestScreenCaptureAccess()
+                   // Registers Ledly in the Screen Recording list (and shows the prompt).
+                   Task { _ = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true) }
                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
                }))
     }

@@ -51,14 +51,12 @@ final class ScreenGrabber: NSObject, SCStreamOutput, SCStreamDelegate {
     private func restart(_ config: GrabberConfig) {
         stop()
         onStatus?(.starting)
-        guard CGPreflightScreenCaptureAccess() else {
-            // Shows the system prompt (once per launch) and adds Ledly to the list in System Settings.
-            if !Self.didRequestAccess {
-                Self.didRequestAccess = true
-                DispatchQueue.main.async { CGRequestScreenCaptureAccess() }
-            }
-            onStatus?(.noPermission)
-            return
+        // No early exit without permission: asking ScreenCaptureKit for the shareable content is
+        // what makes macOS show its prompt and list Ledly under Screen Recording.
+        // CGRequestScreenCaptureAccess alone doesn't register the app on recent macOS.
+        if !CGPreflightScreenCaptureAccess(), !Self.didRequestAccess {
+            Self.didRequestAccess = true
+            DispatchQueue.main.async { CGRequestScreenCaptureAccess() }
         }
         Task {
             do {
