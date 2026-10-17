@@ -54,8 +54,9 @@ git tag v1.1.0 && git push origin v1.1.0
 | `DDPReceiver.swift` | DDP por UDP (4048): junta paquetes y entrega el fotograma con push a `LEDEngine.receiveLive`. Lo arranca `APIServer` con su misma política de red |
 | `APIDocs.swift` | Especificación OpenAPI 3.0 (`/api/openapi.json`) y página HTML autónoma que la pinta y prueba (`/api/docs`, también `/`). Al tocar la API, actualizar aquí |
 | `APIServer.swift` | HTTP/1.1 + WebSocket sobre `Network.framework`; API propia y subconjunto WLED; Bonjour `_wled._tcp` |
-| `Settings.swift` | `UserDefaults` (`com.egluu.ledly`) y login item |
+| `Settings.swift` | `UserDefaults` (`com.mrdrarek.ledly`) y login item |
 | `MainView.swift`, `Panes.swift` | Ventana: Inicio, Efectos, Disposición, Dispositivo, Imagen, API, Ajustes; `StripPreview` |
+| `Migration.swift` | Copia una vez los ajustes del identificador antiguo (`com.egluu.ledly`) |
 | `Theme.swift`, `Localization.swift`, `Updater.swift` | Iguales que en Wallpy (estilo, idiomas, autoactualización desde `drarekx/ledly`) |
 
 Copias del firmware anterior: `~/Library/Application Support/Ledly/Backups/`.
@@ -74,7 +75,8 @@ Copias del firmware anterior: `~/Library/Application Support/Ledly/Backups/`.
 
 - **A 1 Mbaud cada byte llega cada 160 ciclos** y la interrupción de HardwareSerial + `read()` cuesta más: con más de ~150 LEDs se perdía medio fotograma. Los datos de color se leen sondeando `UDR0` con la interrupción RX apagada (`readColors`). Nada de divisiones en ese camino. Medido: 300 LEDs a 46 fps sin pérdidas.
 - **Nada que cambie a ritmo de fotograma en `LEDEngine`**: cada `@Published` suyo redibuja todos los paneles que lo observan (con la ventana abierta llegó a 18 % de CPU). Colores y consumo van en `LEDEngine.shared.preview` (`LEDPreview`), que solo observan `LiveStripPreview` y la tarjeta de consumo; `/api/leds` lee del bucle con `currentColors()`.
-- **Permiso de pantalla «activado» pero denegado**: macOS guarda con el permiso la firma exacta que tenía la app. Lo concedido con firma ad-hoc queda atado a ese `cdhash` y no vale tras cambiar de firma. Arreglo: `tccutil reset ScreenCapture com.egluu.ledly`, reabrir y volver a concederlo. Comprobar con `sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" "select hex(csreq) from access where client='com.egluu.ledly'"` + `csreq -r - -t`.
+- El identificador es `com.mrdrarek.ledly` (app personal, no de egluu). Cambiarlo pierde el permiso de Grabación de pantalla y obliga a migrar los ajustes (`Migration.swift`).
+- **Permiso de pantalla «activado» pero denegado**: macOS guarda con el permiso la firma exacta que tenía la app. Lo concedido con firma ad-hoc queda atado a ese `cdhash` y no vale tras cambiar de firma. Arreglo: `tccutil reset ScreenCapture com.mrdrarek.ledly`, reabrir y volver a concederlo. Comprobar con `sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" "select hex(csreq) from access where client='com.mrdrarek.ledly'"` + `csreq -r - -t`.
 - `build-app.sh` firma con el primer certificado «Apple Development» (o `SIGN_IDENTITY`) para que el permiso de Grabación de pantalla sobreviva a las recompilaciones; sin certificado (CI) firma ad-hoc.
 
 - **Reabrir el puerto enseguida no resetea el Nano** (el condensador de DTR no se recarga) y no llega el saludo: `LEDDevice.connect` pulsa DTR a mano.

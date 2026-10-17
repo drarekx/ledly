@@ -9,6 +9,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Before anything reads Settings.
+        Migration.fromEgluuBundleID()
+
         // Development: `Ledly --read-flash <port> <out.hex>` dumps the board's firmware and quits.
         let args = CommandLine.arguments
         if let index = args.firstIndex(of: "--read-flash"), index + 2 < args.count {

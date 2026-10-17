@@ -21,7 +21,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key><string>Ledly</string>
-    <key>CFBundleIdentifier</key><string>com.egluu.ledly</string>
+    <key>CFBundleIdentifier</key><string>com.mrdrarek.ledly</string>
     <key>CFBundleName</key><string>Ledly</string>
     <key>CFBundleDisplayName</key><string>Ledly</string>
     <key>CFBundlePackageType</key><string>APPL</string>

@@ -105,7 +105,7 @@ sock.sendto(header + data, ("host.docker.internal", 4048))
 
 ## Problemas frecuentes
 
-- **No lee la pantalla aunque el permiso está activado**: sal de Ledly y vuelve a abrirla. Si sigue igual, quita Ledly de la lista de Grabación de pantalla, ábrela y concédelo de nuevo (`tccutil reset ScreenCapture com.egluu.ledly` lo borra desde Terminal).
+- **No lee la pantalla aunque el permiso está activado**: sal de Ledly y vuelve a abrirla. Si sigue igual, quita Ledly de la lista de Grabación de pantalla, ábrela y concédelo de nuevo (`tccutil reset ScreenCapture com.mrdrarek.ledly` lo borra desde Terminal).
 - **No encuentra el Arduino**: prueba otro cable USB (algunos solo cargan) y cierra otras apps que usen el puerto (Arduino IDE, HyperHDR, Prismatik…).
 - **Falla al instalar el firmware**: algunos Nano viejos necesitan pulsar el botón de reset justo al empezar la instalación.
 - **Colores en el lado equivocado**: Disposición → cambia la esquina del primer LED o el sentido, y comprueba con **Dirección**.
@@ -113,7 +113,7 @@ sock.sendto(header + data, ("host.docker.internal", 4048))
 
 ## Dónde guarda las cosas
 
-- Ajustes: `defaults read com.egluu.ledly`
+- Ajustes: `defaults read com.mrdrarek.ledly`
 - Copias del firmware anterior del Nano: `~/Library/Application Support/Ledly/Backups/`
 
 ## Desinstalar
@@ -121,7 +121,7 @@ sock.sendto(header + data, ("host.docker.internal", 4048))
 Sal de Ledly (menú → **Salir de Ledly**), borra `Ledly.app` de Aplicaciones y, si quieres quitar también los ajustes:
 
 ```sh
-defaults delete com.egluu.ledly
+defaults delete com.mrdrarek.ledly
 rm -rf ~/Library/Application\ Support/Ledly
 ```
 
