@@ -16,7 +16,7 @@ VERSION=1.1.0 ./build-app.sh
 
 - Requisitos: macOS 14+, Xcode 16+. Tools 5.10 (modo Swift 5).
 - No hay tests. Verificar compilando y con la API (`curl localhost:8765/api/state`), que da estado del dispositivo, fps y captura.
-- Solo una copia abierta a la vez: el puerto serie se abre en exclusiva. HyperHDR también puede quedarse el puerto.
+- Solo una copia abierta a la vez: el puerto serie se abre en exclusiva («Resource busy»). Al abrir una segunda, trae al frente la que ya corre y se cierra (`AppDelegate`). HyperHDR u otras apps también pueden quedarse el puerto.
 
 ## Publicar una versión
 

@@ -40,6 +40,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
 
+        // Only one copy at a time: the serial port and the API port can only be opened once
+        // ("Resource busy"). A second launch brings the running one forward and quits.
+        if let other = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+            .first(where: { $0 != .current }) {
+            if let url = other.bundleURL { NSWorkspace.shared.open(url) }
+            NSApp.terminate(nil)
+            return
+        }
+
         setupMainMenu()
         Localizer.shared.$choice
             .dropFirst()
