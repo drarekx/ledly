@@ -121,8 +121,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateStatusIcon() {
-        let name = Settings.shared.isOn ? "lightspectrum.horizontal" : "lightbulb.slash"
-        statusItem.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "Ledly")
+        statusItem.button?.image = Self.menuBarIcon(on: Settings.shared.isOn)
+    }
+
+    /// A monitor with a ring of LEDs: rainbow when the strip is on, grey when it's off.
+    /// Drawn on demand so the outline follows the menu bar's light or dark appearance.
+    static func menuBarIcon(on: Bool) -> NSImage {
+        let image = NSImage(size: NSSize(width: 22, height: 18), flipped: false) { _ in
+            let screen = NSRect(x: 5, y: 5, width: 12, height: 8)
+            (on ? NSColor.labelColor : NSColor.secondaryLabelColor).setStroke()
+            let outline = NSBezierPath(roundedRect: screen, xRadius: 1.5, yRadius: 1.5)
+            outline.lineWidth = 1.4
+            outline.stroke()
+
+            // LEDs around the screen, clockwise from the top left.
+            var dots: [NSPoint] = []
+            for x in stride(from: 6.0, through: 16.0, by: 2.5) { dots.append(NSPoint(x: x, y: 16)) }
+            for y in stride(from: 11.5, through: 6.5, by: -2.5) { dots.append(NSPoint(x: 19.5, y: y)) }
+            for x in stride(from: 16.0, through: 6.0, by: -2.5) { dots.append(NSPoint(x: x, y: 2)) }
+            for y in stride(from: 6.5, through: 11.5, by: 2.5) { dots.append(NSPoint(x: 2.5, y: y)) }
+            for (i, p) in dots.enumerated() {
+                let color = on
+                    ? NSColor(hue: CGFloat(i) / CGFloat(dots.count), saturation: 0.85, brightness: 1, alpha: 1)
+                    : NSColor.tertiaryLabelColor
+                color.setFill()
+                NSBezierPath(ovalIn: NSRect(x: p.x - 1.1, y: p.y - 1.1, width: 2.2, height: 2.2)).fill()
+            }
+            return true
+        }
+        image.accessibilityDescription = on ? tr("Ledly, tira encendida") : tr("Ledly, tira apagada")
+        return image
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
