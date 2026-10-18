@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import CoreMedia
 import Foundation
@@ -6,6 +7,8 @@ import ScreenCaptureKit
 /// What the grabber needs to turn a frame into one color per LED.
 struct GrabberConfig: Equatable {
     var displayID: CGDirectDisplayID
+    /// Follow this app's largest window instead of the whole display; nil = display.
+    var appBundleID: String?
     var fps: Int
     var zones: [CGRect]
     var sampling: SamplingMode
@@ -21,6 +24,22 @@ final class ScreenGrabber: NSObject, SCStreamOutput, SCStreamDelegate {
     /// Called on the capture queue with one color per zone.
     var onColors: (([RGB]) -> Void)?
     var onStatus: ((Status) -> Void)?
+    /// What is being captured ("Pantalla DELL", "Ventana de Safari…"), on change.
+    var onSource: ((String) -> Void)?
+    /// A downscaled copy of the frame and the content rect left after cropping black borders
+    /// (in the image's pixels), a few times a second while `previewWanted` is on.
+    var onPreview: ((CGImage, CGRect) -> Void)?
+
+    /// Set from any thread; only then are preview images made.
+    var previewWanted: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return _previewWanted }
+        set { lock.lock(); _previewWanted = newValue; lock.unlock() }
+    }
+    private var _previewWanted = false
+    private var lastPreview = Date.distantPast
+    /// Window being captured in app mode, to notice when a different one becomes the main one.
+    private var capturedWindow: (id: CGWindowID, size: CGSize)?
+    private var appWatch: DispatchSourceTimer?
 
     private let queue = DispatchQueue(label: "ledly.grabber", qos: .userInteractive)
     private var stream: SCStream?
@@ -43,9 +62,52 @@ final class ScreenGrabber: NSObject, SCStreamOutput, SCStreamDelegate {
             stop()
             return
         }
-        if stream == nil || old?.displayID != newConfig.displayID || old?.fps != newConfig.fps {
+        if stream == nil || old?.displayID != newConfig.displayID || old?.fps != newConfig.fps
+            || old?.appBundleID != newConfig.appBundleID {
             restart(newConfig)
         }
+    }
+
+    /// In app mode, checks every 2 s whether the app's main window changed (another window,
+    /// resized, closed, app quit) and restarts the capture on it.
+    private func watchApp(_ config: GrabberConfig) {
+        appWatch?.cancel()
+        appWatch = nil
+        guard let bundleID = config.appBundleID else { return }
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + 2, repeating: 2)
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            Task {
+                guard let content = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true) else { return }
+                let best = Self.mainWindow(of: bundleID, in: content)
+                let current = self.capturedWindow
+                let changed: Bool
+                switch (best, current) {
+                case (nil, nil): changed = false
+                case (let w?, let c?): changed = w.windowID != c.id
+                    || abs(w.frame.width - c.size.width) > 2 || abs(w.frame.height - c.size.height) > 2
+                default: changed = true
+                }
+                if changed, let config = self.currentConfig(), config.appBundleID == bundleID {
+                    self.restart(config)
+                }
+            }
+        }
+        timer.resume()
+        appWatch = timer
+    }
+
+    private func currentConfig() -> GrabberConfig? {
+        lock.withLock { config }
+    }
+
+    /// The app's largest normal window that's on screen, if any.
+    static func mainWindow(of bundleID: String, in content: SCShareableContent) -> SCWindow? {
+        content.windows
+            .filter { $0.owningApplication?.bundleIdentifier == bundleID && $0.isOnScreen
+                && $0.windowLayer == 0 && $0.frame.width >= 160 && $0.frame.height >= 120 }
+            .max { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }
     }
 
     private func restart(_ config: GrabberConfig) {
@@ -66,9 +128,30 @@ final class ScreenGrabber: NSObject, SCStreamOutput, SCStreamDelegate {
                     onStatus?(.failed(tr("No se encuentra la pantalla.")))
                     return
                 }
-                let filter = SCContentFilter(display: display, excludingWindows: [])
+                let filter: SCContentFilter
+                let size: CGSize
+                if let bundleID = config.appBundleID, let window = Self.mainWindow(of: bundleID, in: content) {
+                    // Only that window, wherever it is: the LEDs follow what it shows.
+                    filter = SCContentFilter(desktopIndependentWindow: window)
+                    size = window.frame.size
+                    capturedWindow = (window.windowID, window.frame.size)
+                    let app = window.owningApplication?.applicationName ?? bundleID
+                    onSource?(window.title.map { $0.isEmpty ? tr("Ventana de %@", app) : tr("Ventana de %@: %@", app, $0) }
+                              ?? tr("Ventana de %@", app))
+                } else {
+                    filter = SCContentFilter(display: display, excludingWindows: [])
+                    size = CGSize(width: display.width, height: display.height)
+                    capturedWindow = nil
+                    let name = NSScreen.screens.first { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID) == display.displayID }?.localizedName ?? tr("Pantalla")
+                    if let bundleID = config.appBundleID {
+                        let app = content.applications.first { $0.bundleIdentifier == bundleID }?.applicationName ?? bundleID
+                        onSource?(tr("%@ no tiene ventanas visibles: capturando %@", app, name))
+                    } else {
+                        onSource?(name)
+                    }
+                }
                 let sc = SCStreamConfiguration()
-                let aspect = Double(display.height) / Double(max(display.width, 1))
+                let aspect = Double(size.height) / Double(max(size.width, 1))
                 sc.width = Self.captureWidth
                 sc.height = max(16, Int((Double(Self.captureWidth) * aspect).rounded()))
                 sc.pixelFormat = kCVPixelFormatType_32BGRA
@@ -82,6 +165,7 @@ final class ScreenGrabber: NSObject, SCStreamOutput, SCStreamDelegate {
                 try await stream.startCapture()
                 self.stream = stream
                 onStatus?(.running)
+                watchApp(config)
             } catch {
                 let nsError = error as NSError
                 // -3801: the user declined screen recording.
@@ -95,6 +179,8 @@ final class ScreenGrabber: NSObject, SCStreamOutput, SCStreamDelegate {
     }
 
     func stop() {
+        appWatch?.cancel()
+        appWatch = nil
         if let stream {
             self.stream = nil
             Task { try? await stream.stopCapture() }
@@ -136,6 +222,21 @@ final class ScreenGrabber: NSObject, SCStreamOutput, SCStreamDelegate {
                               rowBytes: CVPixelBufferGetBytesPerRow(pixels))
         let colors = analysis.colors(frame: frame, config: config)
         onColors?(colors)
+
+        if previewWanted, Date().timeIntervalSince(lastPreview) > 0.15, let image = Self.image(of: frame) {
+            lastPreview = Date()
+            onPreview?(image, analysis.content)
+        }
+    }
+
+    /// Copies the frame into a CGImage (the pixel buffer is reused by ScreenCaptureKit).
+    private static func image(of f: BGRAFrame) -> CGImage? {
+        let data = Data(bytes: f.base, count: f.rowBytes * f.height)
+        guard let provider = CGDataProvider(data: data as CFData) else { return nil }
+        return CGImage(width: f.width, height: f.height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: f.rowBytes,
+                       space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                       bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue),
+                       provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
     }
 }
 
@@ -162,6 +263,8 @@ struct FrameAnalyzer {
     }
 
     private var border = BlackBorderDetector()
+    /// Area of the last frame used for the zones, after cropping black borders (pixels).
+    private(set) var content = CGRect.zero
 
     mutating func colors(frame: BGRAFrame, config: GrabberConfig) -> [RGB] {
         var content = CGRect(x: 0, y: 0, width: frame.width, height: frame.height)
@@ -171,6 +274,7 @@ struct FrameAnalyzer {
         } else {
             border.reset()
         }
+        self.content = content
         return config.zones.map { zone in
             let x0 = Int((content.minX + zone.minX * content.width).rounded(.down))
             let x1 = max(x0 + 1, Int((content.minX + zone.maxX * content.width).rounded(.up)))

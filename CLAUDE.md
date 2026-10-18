@@ -45,6 +45,7 @@ git tag v1.1.0 && git push origin v1.1.0
 | `LEDDevice.swift` | Conexión Adalight: reset por DTR, saludo, espera del `k` |
 | `SerialPort.swift` | Puerto POSIX 8N1, baudios arbitrarios (`IOSSIOSPEED`), lista de puertos USB por IOKit |
 | `Flasher.swift` | STK500 v1 (Optiboot 115200 / ATmegaBOOT 57600): firma, copia de seguridad, escritura y verificación; Intel HEX |
+| `CaptureViews.swift` | Vista de la captura (imagen + zonas + recorte), selector de app a capturar, asistente de disposición (`LayoutWizard`, patrón `.cursor`) y de balance de blancos |
 | `ScreenGrabber.swift` | ScreenCaptureKit a 256 px de ancho, media por zona (media / lineal / dominante), detector de bordes negros |
 | `LEDLayout.swift` | Disposición (LEDs por lado, esquina, sentido, desplazamiento, hueco del pie) → zonas ordenadas |
 | `Calibration.swift` | Calibración avanzada: objetivo por esquina del cubo RGB, interpolación trilineal (`PreparedCalibration`), primer paso de `ColorAdjustments.apply` |
@@ -72,6 +73,9 @@ Copias del firmware anterior: `~/Library/Application Support/Ledly/Backups/`.
 
 ## Cosas que ya costaron (no repetir)
 
+- **Vista de la captura**: el grabber solo copia fotogramas a `CGImage` mientras `LEDPreview.captureViewers > 0` (≈7 por segundo). No añadir trabajo por fotograma fuera de ese caso.
+- **Captura de app**: `SCContentFilter(desktopIndependentWindow:)` sobre la ventana más grande de la app (capa 0, ≥160×120); un temporizador cada 2 s la vuelve a buscar y reinicia el stream si cambia de ventana o tamaño. Sin ventanas, cae a la pantalla elegida.
+- **Asistente de disposición**: `LEDLayout.solved(count:corners:hasBottomGap:)` prueba esquinas de inicio y desplazamientos hasta que `cornerIndices()` coincide con lo marcado. El hueco del pie se estima como `arriba − abajo`.
 - **Prioridades del bucle de salida** (`OutputLoop.targetColors`): patrones de prueba > tiempo real (DDP, enciende aunque esté apagada) > apagado > efecto de arranque > aviso temporal (`duration`) > modo normal. El tiempo real no toca ajustes: al acabar se vuelve solo a lo que había. Mientras dura, la captura de pantalla y la de audio se paran.
 
 - **A 1 Mbaud cada byte llega cada 160 ciclos** y la interrupción de HardwareSerial + `read()` cuesta más: con más de ~150 LEDs se perdía medio fotograma. Los datos de color se leen sondeando `UDR0` con la interrupción RX apagada (`readColors`). Nada de divisiones en ese camino. Medido: 300 LEDs a 46 fps sin pérdidas.

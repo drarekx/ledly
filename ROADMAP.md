@@ -21,9 +21,9 @@ Orden de trabajo. Marcar `[x]` al terminar y anotar lo que haya costado en CLAUD
 
 ## Fase 3 — Pulido
 
-- [ ] **Capturar una ventana o app** en vez de toda la pantalla.
-- [ ] **Asistentes**: disposición (LED a LED) y balance de blancos.
-- [ ] **Vista de la captura** con las zonas de cada LED encima.
+- [x] **Capturar una app**: Imagen → Capturar; sigue la ventana más grande de la app (la revisa cada 2 s) y, si no tiene ventanas, captura la pantalla. `captureSource` en `/api/state`. Probado con Chrome.
+- [x] **Asistentes**: disposición LED a LED (último LED + 4 esquinas → LEDs por lado, inicio, sentido, desplazamiento y hueco; el cálculo acierta en 864 casos simulados) y balance de blancos (blanco/gris en la tira junto al de la pantalla, temperatura y ganancias en vivo).
+- [x] **Vista de la captura** (Imagen): la imagen capturada con la zona de cada LED pintada con su color y el recorte de bordes negros; solo se generan imágenes con la vista abierta.
 - [ ] **HDR**: captura HDR y mapeo de tonos para la tira. En espera: las tres pantallas actuales son SDR (macOS ya convierte el HDR a SDR antes de mostrarlo), así que no aportaría nada. Tiene sentido con una pantalla HDR o con una capturadora HDMI (señal HDR10 «lavada», que es para lo que lo usa HyperHDR).
 - [x] **Efectos de HyperHDR que faltaban**: remolino atómico, ondas de color, manchas azules/verdes/rojas/frías/cálidas, policía fija, cine (encender/apagar), aviso y apagado del sistema. Añadidos al final de la lista para no mover los números de WLED; en la app salen agrupados.
 - [x] **Calibración avanzada**: color objetivo de cada esquina del cubo RGB (rojo, verde, azul, cian, magenta, amarillo, blanco, negro) con interpolación trilineal y botón «Probar» que enciende ese color en la tira. Se aplica a todo (pantalla, efectos, color, DDP).

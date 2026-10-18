@@ -69,6 +69,9 @@ final class Settings: ObservableObject {
     // Screen capture
     /// CGDirectDisplayID of the captured screen; 0 = main display.
     @Published var displayID: UInt32 { didSet { defaults.set(displayID, forKey: "displayID") } }
+    /// Capture only this app's main window (bundle ID); nil = the whole display.
+    @Published var captureApp: String? { didSet { defaults.set(captureApp, forKey: "captureApp") } }
+    @Published var captureAppName: String? { didSet { defaults.set(captureAppName, forKey: "captureAppName") } }
     @Published var captureFPS: Int { didSet { defaults.set(captureFPS, forKey: "captureFPS") } }
     @Published var sampling: SamplingMode { didSet { defaults.set(sampling.rawValue, forKey: "sampling") } }
     @Published var blackBorders: Bool { didSet { defaults.set(blackBorders, forKey: "blackBorders") } }
@@ -157,6 +160,8 @@ final class Settings: ObservableObject {
         dataPin = defaults.integer(forKey: "dataPin")
         layout = defaults.data(forKey: "layout").flatMap { try? JSONDecoder().decode(LEDLayout.self, from: $0) } ?? LEDLayout()
         displayID = UInt32(truncatingIfNeeded: defaults.integer(forKey: "displayID"))
+        captureApp = defaults.string(forKey: "captureApp")
+        captureAppName = defaults.string(forKey: "captureAppName")
         captureFPS = defaults.integer(forKey: "captureFPS")
         sampling = SamplingMode(rawValue: defaults.string(forKey: "sampling") ?? "") ?? .linear
         blackBorders = defaults.bool(forKey: "blackBorders")

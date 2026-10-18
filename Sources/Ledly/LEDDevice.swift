@@ -2,6 +2,10 @@ import Foundation
 
 /// Connection to the Arduino that drives the strip (Adalight protocol).
 /// Only used from the engine queue.
+extension LEDDevice.Status {
+    var isConnectedStatus: Bool { if case .connected = self { return true } else { return false } }
+}
+
 final class LEDDevice {
     enum Status: Equatable {
         case disconnected

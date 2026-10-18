@@ -117,3 +117,72 @@ extension LEDLayout {
         return ordered
     }
 }
+
+// MARK: - Layout wizard
+
+extension LEDLayout {
+    /// Strip index of the LED sitting at each screen corner, taken as the first LED of the side
+    /// that starts there going along the strip. This is what the layout wizard asks the user to mark.
+    func cornerIndices() -> [StartCorner: Int] {
+        let zones = zones()
+        func first(_ side: ScreenSide, by key: (LEDZone) -> Double) -> Int? {
+            zones.indices.filter { zones[$0].side == side }.min { key(zones[$0]) < key(zones[$1]) }
+        }
+        var result: [StartCorner: Int] = [:]
+        if clockwise {
+            result[.topLeft] = first(.top) { $0.position.x }
+            result[.topRight] = first(.right) { $0.position.y }
+            result[.bottomRight] = first(.bottom) { -$0.position.x }
+            result[.bottomLeft] = first(.left) { -$0.position.y }
+        } else {
+            result[.topLeft] = first(.left) { $0.position.y }
+            result[.bottomLeft] = first(.bottom) { $0.position.x }
+            result[.bottomRight] = first(.right) { -$0.position.y }
+            result[.topRight] = first(.top) { -$0.position.x }
+        }
+        return result
+    }
+
+    /// Works out the layout from what the user marked: the strip's LED count and the index of the
+    /// LED at each corner. With `hasBottomGap`, the bottom gets as many missing LEDs as needed to
+    /// match the density of the top edge. Depth and overlap are kept from `self`.
+    /// Returns nil when the marks don't describe a strip going round the screen.
+    func solved(count n: Int, corners marks: [StartCorner: Int], hasBottomGap: Bool) -> LEDLayout? {
+        guard n >= 4, let tl = marks[.topLeft], let tr = marks[.topRight],
+              let br = marks[.bottomRight], let bl = marks[.bottomLeft],
+              Set([tl, tr, br, bl]).count == 4, [tl, tr, br, bl].allSatisfy({ (0..<n).contains($0) }) else { return nil }
+        func d(_ a: Int, _ b: Int) -> Int { ((b - a) % n + n) % n }
+
+        // Going clockwise from the top-left corner, the top-right one comes first.
+        let clockwise = d(tl, tr) < d(tl, bl)
+        var top, right, bottom, left: Int
+        if clockwise {
+            (top, right, bottom, left) = (d(tl, tr), d(tr, br), d(br, bl), d(bl, tl))
+        } else {
+            (left, bottom, right, top) = (d(tl, bl), d(bl, br), d(br, tr), d(tr, tl))
+        }
+        guard top + right + bottom + left == n, min(top, right, left) > 0 else { return nil }
+        let gap = hasBottomGap ? max(0, top - bottom) : 0
+
+        var best: LEDLayout?
+        for start in StartCorner.allCases {
+            for offset in stride(from: 0, through: n, by: 1).flatMap({ [$0, -$0] }) {
+                if let best, abs(best.offset) <= abs(offset) { break }
+                var candidate = self
+                candidate.top = top
+                candidate.right = right
+                candidate.bottom = bottom + gap
+                candidate.left = left
+                candidate.bottomGap = gap
+                candidate.start = start
+                candidate.clockwise = clockwise
+                candidate.offset = offset
+                if candidate.count == n, candidate.cornerIndices() == marks {
+                    best = candidate
+                    break
+                }
+            }
+        }
+        return best
+    }
+}

@@ -41,6 +41,7 @@ enum APIDocs {
                 "leds": ["type": "integer", "description": "LEDs de la disposición."],
                 "fps": ["type": "number", "description": "Fotogramas por segundo que llegan a la tira."],
                 "capture": ["type": "string", "description": "stopped, starting, running, no-permission o error: …"],
+                "captureSource": ["type": "string", "description": "Qué se captura: la pantalla o la ventana de la app elegida en Imagen → Capturar."],
                 "audio": ["type": "object", "nullable": true,
                           "description": "Audio del sistema que ven los efectos de música (null si no hay ninguno activo): `level`, `bass` y 16 `bands` de 0 a 1, y `lastBeat`."],
                 "power": ["type": "object", "description": "Consumo estimado de la tira.", "properties": [

@@ -7,6 +7,7 @@ import SwiftUI
 struct LayoutPane: View {
     @ObservedObject private var settings = Settings.shared
     @ObservedObject private var engine = LEDEngine.shared
+    @State private var showWizard = false
 
     var body: some View {
         Pane(title: tr("Disposición"), subtitle: tr("Cuántos LEDs hay en cada lado y por dónde empieza la tira, mirando la pantalla de frente.")) {
@@ -50,6 +51,19 @@ struct LayoutPane: View {
                 .ledlyCard()
             }
 
+            HStack(spacing: 14) {
+                Image(systemName: "wand.and.stars").font(.system(size: 20)).foregroundStyle(Theme.accentText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("Asistente de disposición")).fontWeight(.semibold)
+                    Text(tr("Enciende un LED, llévalo al último y a cada esquina, y Ledly calcula el resto."))
+                        .font(.system(size: 12)).foregroundStyle(Theme.text2)
+                }
+                Spacer()
+                Button(tr("Empezar…")) { showWizard = true }.buttonStyle(.ledlyPrimary)
+                    .disabled(!engine.deviceStatus.isConnectedStatus)
+            }
+            .ledlyCard()
+
             VStack(alignment: .leading, spacing: 10) {
                 SectionLabel(tr("Comprobar"))
                 Text(tr("«Dirección» enciende el primer LED en verde, el segundo en azul y el último en rojo. «Lados» pinta cada lado de un color: arriba rojo, derecha verde, abajo azul, izquierda amarillo."))
@@ -65,6 +79,9 @@ struct LayoutPane: View {
             .ledlyCard()
         }
         .onDisappear { engine.testPattern = nil }
+        .sheet(isPresented: $showWizard) {
+            LayoutWizard { showWizard = false }
+        }
     }
 
     private func testButton(_ title: String, _ pattern: TestPattern) -> some View {
@@ -290,12 +307,16 @@ private struct FirmwareCard: View {
 struct ImagePane: View {
     @ObservedObject private var settings = Settings.shared
     @State private var displays: [(CGDirectDisplayID, String)] = []
+    @State private var showWhiteBalance = false
 
     var body: some View {
         Pane(title: tr("Imagen"), subtitle: tr("Cómo se captura la pantalla y cómo se corrigen los colores antes de enviarlos.")) {
+            CaptureViewer()
+
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(tr("Captura"))
-                Picker(tr("Pantalla"), selection: $settings.displayID) {
+                CaptureTargetPicker()
+                Picker(settings.captureApp == nil ? tr("Pantalla") : tr("Pantalla si la app no tiene ventanas"), selection: $settings.displayID) {
                     Text(tr("Principal")).tag(UInt32(0))
                     ForEach(displays, id: \.0) { Text($0.1).tag($0.0) }
                 }
@@ -315,6 +336,7 @@ struct ImagePane: View {
                 HStack {
                     SectionLabel(tr("Color"))
                     Spacer()
+                    Button(tr("Balance de blancos…")) { showWhiteBalance = true }.buttonStyle(.ledlySecondary)
                     Button(tr("Restablecer")) { settings.resetImage() }.buttonStyle(.ledlyGhost)
                 }
                 SliderRow(title: tr("Suavizado"), value: $settings.smoothingMs, range: 0...1000, step: 10) { "\(Int($0)) ms" }
@@ -337,6 +359,9 @@ struct ImagePane: View {
             .ledlyCard()
 
             CalibrationCard()
+        }
+        .sheet(isPresented: $showWhiteBalance) {
+            WhiteBalanceWizard { showWhiteBalance = false }
         }
         .task {
             displays = NSScreen.screens.compactMap { screen in

@@ -231,6 +231,7 @@ final class APIServer: ObservableObject {
                       "limit": Settings.shared.powerLimitEnabled ? Settings.shared.powerLimitMilliamps : 0],
             "device": deviceInfo(),
             "capture": captureStatusText(engine.grabberStatus),
+            "captureSource": engine.captureSource,
             "audio": engine.audioLevels().map { a -> [String: Any] in
                 ["level": (Double(a.level) * 100).rounded() / 100, "bass": (Double(a.bass) * 100).rounded() / 100,
                  "bands": a.bands.map { (Double($0) * 100).rounded() / 100 },

@@ -26,13 +26,13 @@ Requisitos: macOS 14 (Sonoma) o posterior, Apple Silicon o Intel. Un Arduino Nan
    - Alimenta la tira con una fuente de 5 V propia. El USB del Mac solo da para unos pocos LEDs a poco brillo.
 2. **Conecta el Nano por USB.** Ledly lo detecta solo.
 3. **Instala el firmware:** Ledly → **Dispositivo** → elige el pin → **Instalar firmware**. Tarda unos segundos y antes guarda una copia del programa que tuviera el Nano. Solo hace falta una vez (y cuando la app avise de que hay una versión nueva).
-4. **Di cómo está colocada la tira:** **Disposición** → LEDs de cada lado, esquina del primer LED y sentido, mirando la pantalla de frente. **Comprobar → Dirección** enciende el primer LED en verde y el último en rojo para que veas si cuadra.
+4. **Di cómo está colocada la tira:** **Disposición → Asistente de disposición** enciende un solo LED que llevas al último y a cada esquina, y calcula el resto. También se puede poner a mano (LEDs de cada lado, esquina del primer LED y sentido, mirando la pantalla de frente); **Comprobar → Dirección** enciende el primer LED en verde y el último en rojo para ver si cuadra.
 5. **Da permiso de Grabación de pantalla** cuando macOS lo pida (o en Ajustes del Sistema → Privacidad y seguridad → Grabación de pantalla → Ledly). Si ya estaba activado y no lee la pantalla, sal de Ledly y vuelve a abrirla.
 6. **Pon el límite de consumo** de tu fuente en **Dispositivo → Consumo** (1000 mA por defecto) para no forzarla.
 
 ## Qué hace
 
-- **Pantalla (ambilight)**: color de cada zona del borde (media, lineal o dominante), ignora las franjas negras de las películas, suavizado (exponencial o tipo muelle), anti-parpadeo en escenas oscuras, gamma, saturación, temperatura, luz mínima, ganancia por canal y **calibración avanzada** (color exacto de rojo, verde, azul, cian, magenta, amarillo, blanco y negro, probándolo en la tira).
+- **Pantalla (ambilight)**: de toda la pantalla o solo de la ventana de una app (un juego, un reproductor), con una **vista de la captura** que enseña qué zona lee cada LED. Color de cada zona del borde (media, lineal o dominante), ignora las franjas negras de las películas, suavizado (exponencial o tipo muelle), anti-parpadeo en escenas oscuras, gamma, saturación, temperatura, luz mínima, ganancia por canal y **calibración avanzada** (color exacto de rojo, verde, azul, cian, magenta, amarillo, blanco y negro, probándolo en la tira) y asistente de balance de blancos.
 - **Efectos**: todos los de HyperHDR (remolinos arcoíris, doble y atómico, ondas, olas, manchas de color en seis tonos, respiración, vela, coche fantástico, policía, estroboscopio, chispas, plasma, cine, aviso, apagado del sistema) y más (fuego, serpiente, barrido, Navidad, reloj, aurora, meteoro), con velocidad y color.
 - **Música**: pulso, ondas, vúmetro y un **ecualizador** con 100 combinaciones (disposición × estilo × colores, incluido estéreo) y combinaciones rápidas. Usa el audio del Mac, sin instalar nada.
 - **Color fijo** con muestras rápidas.

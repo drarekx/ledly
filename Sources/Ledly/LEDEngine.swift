@@ -19,6 +19,7 @@ struct EngineConfig {
     var powerLimit = 0
     var portPath: String?
     var displayID: CGDirectDisplayID = 0
+    var captureApp: String?
     var captureFPS = 30
     var sampling: SamplingMode = .linear
     var blackBorders = true
@@ -40,6 +41,9 @@ enum TestPattern: Equatable {
     case sides
     /// The whole strip shows this input color through the color correction (calibration).
     case calibration(RGB)
+    /// One bright LED at `index` (with dim neighbours) on a strip of `count`, for the layout
+    /// wizard; `count` may be larger than the current layout.
+    case cursor(index: Int, count: Int)
 }
 
 /// Drives the strip: picks the source, smooths, corrects colors and sends frames to the device.
@@ -63,6 +67,8 @@ final class LEDEngine: ObservableObject {
     @Published private(set) var fps: Double = 0
     @Published private(set) var ports: [SerialPortInfo] = []
     @Published private(set) var overlayActive = false
+    /// What the screen capture is looking at ("Pantalla DELL", "Ventana de Safari: …").
+    @Published private(set) var captureSource = ""
     /// Frames from the network (DDP) are showing; nil when not. Holds the sender's address.
     @Published private(set) var liveSource: String?
     @Published var testPattern: TestPattern? { didSet { let t = testPattern; queue.async { self.loop.testPattern = t } } }
@@ -82,6 +88,17 @@ final class LEDEngine: ObservableObject {
         loop.publish = { [weak self] snapshot in
             DispatchQueue.main.async { self?.apply(snapshot) }
         }
+        loop.onSource = { [weak self] source in
+            MainActor.assumeIsolated { if self?.captureSource != source { self?.captureSource = source } }
+        }
+        loop.onPreview = { [weak self] image, content in
+            MainActor.assumeIsolated {
+                guard let preview = self?.preview, preview.captureViewers > 0 else { return }
+                preview.captureImage = image
+                preview.captureContent = content
+            }
+        }
+        preview.onCaptureViewersChange = { [weak self] wanted in self?.loop.setCapturePreview(wanted) }
         loop.start()
 
         Settings.shared.objectWillChange
@@ -131,6 +148,7 @@ final class LEDEngine: ObservableObject {
         c.powerLimit = s.powerLimitEnabled ? s.powerLimitMilliamps : 0
         c.portPath = s.portPath
         c.displayID = s.displayID
+        c.captureApp = s.captureApp
         c.captureFPS = s.captureFPS
         c.sampling = s.sampling
         c.blackBorders = s.blackBorders
@@ -242,6 +260,18 @@ final class LEDPreview: ObservableObject {
     var listeners = 0
 
     var isWanted: Bool { viewers > 0 || listeners > 0 }
+
+    /// The capture viewer: last captured frame and the area used after cropping black borders.
+    @Published var captureImage: CGImage?
+    @Published var captureContent = CGRect.zero
+    var onCaptureViewersChange: ((Bool) -> Void)?
+    /// Capture viewers on screen; frames are only copied while there is one.
+    var captureViewers = 0 {
+        didSet {
+            if (oldValue > 0) != (captureViewers > 0) { onCaptureViewersChange?(captureViewers > 0) }
+            if captureViewers == 0 { captureImage = nil }
+        }
+    }
 }
 
 /// The real-time part. Everything here runs on the engine queue.
@@ -261,6 +291,14 @@ final class OutputLoop {
 
     let device = LEDDevice()
     var publish: ((Snapshot) -> Void)?
+    /// Main thread.
+    var onSource: ((String) -> Void)?
+    var onPreview: ((CGImage, CGRect) -> Void)?
+
+    /// Thread-safe: the grabber guards it with its own lock.
+    func setCapturePreview(_ wanted: Bool) {
+        grabber.previewWanted = wanted
+    }
     var config = EngineConfig() { didSet { configChanged(oldValue) } }
     var overlay: Overlay? { didSet { updateGrabber() } }
     /// Latest network frame; beats everything except the test patterns, "off" included.
@@ -308,6 +346,12 @@ final class OutputLoop {
         grabber.onStatus = { [weak self] status in
             guard let self else { return }
             self.queue.async { self.grabberStatus = status }
+        }
+        grabber.onSource = { [weak self] source in
+            DispatchQueue.main.async { self?.onSource?(source) }
+        }
+        grabber.onPreview = { [weak self] image, content in
+            DispatchQueue.main.async { self?.onPreview?(image, content) }
         }
     }
 
@@ -381,7 +425,7 @@ final class OutputLoop {
         if !music && audio.isRunning { audio.stop() }
 
         let wanted = config.isOn && live == nil && effectiveMode == .screen && !config.zones.isEmpty
-        grabber.update(wanted ? GrabberConfig(displayID: config.displayID, fps: config.captureFPS,
+        grabber.update(wanted ? GrabberConfig(displayID: config.displayID, appBundleID: config.captureApp, fps: config.captureFPS,
                                               zones: config.zones.map(\.rect), sampling: config.sampling,
                                               blackBorders: config.blackBorders) : nil)
     }
@@ -400,7 +444,8 @@ final class OutputLoop {
         }
         maintainConnection(now)
 
-        let n = config.zones.count
+        var n = config.zones.count
+        if case .cursor(_, let count) = testPattern { n = count }
         let target = targetColors(now: now, count: n)
         // Screen mode uses the user's smoothing; everything else a short exponential fade.
         // Network frames are shown as they come: the sender does its own animation.
@@ -503,6 +548,14 @@ final class OutputLoop {
                 case .left: return RGB(r: 1, g: 1, b: 0) * dim
                 }
             }
+        case .cursor(let index, _):
+            var out = Array(repeating: RGB.black, count: n)
+            let white = RGB(r: 1, g: 1, b: 1) * 0.6
+            for k in [-2, -1, 1, 2] where index + k >= 0 && index + k < n {
+                out[index + k] = RGB(r: 0.15, g: 0.25, b: 1) * (k.magnitude == 1 ? 0.25 : 0.08)
+            }
+            if index >= 0 && index < n { out[index] = white }
+            return out
         case .calibration(let color):
             // Same path as effects and solid colors: calibration, white balance, gains, brightness.
             var a = config.adjustments
