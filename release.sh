@@ -28,8 +28,9 @@ IDENTITY=${SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null
 [[ -n "$IDENTITY" ]] || fail "No hay certificado «Apple Development» en el llavero; sin él, macOS pediría de nuevo el permiso tras cada actualización."
 
 # The CI build must be green for this commit.
-ci=$(gh run list --workflow build.yml --commit "$(git rev-parse HEAD)" --limit 1 --json conclusion -q '.[0].conclusion' 2>/dev/null || true)
-[[ "$ci" == "success" ]] || fail "La compilación de GitHub (build.yml) de este commit no está en verde (estado: ${ci:-sin ejecutar})."
+ci=$(gh run list --workflow build.yml --commit "$(git rev-parse HEAD)" --limit 1 \
+      --json status,conclusion -q '.[0] | if .status == "completed" then .conclusion else "en curso" end' 2>/dev/null || true)
+[[ "$ci" == "success" ]] || fail "La compilación de GitHub (build.yml) de este commit no está en verde (estado: ${ci:-sin ejecutar}). Espera a que acabe o revísala."
 
 bold "Compilando Ledly $VERSION…"
 SIGN_IDENTITY="$IDENTITY" VERSION="$VERSION" BUILD="$(git rev-list --count HEAD)" ./build-app.sh
