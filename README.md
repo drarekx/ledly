@@ -44,7 +44,7 @@ Requisitos: macOS 14 (Sonoma) o posterior, Apple Silicon o Intel. Un Arduino Nan
 
 ## Stream Deck
 
-Hay un plugin de Stream Deck (`com.mrdrarek.ledly.sdPlugin`, en el repo de plugins) con seis acciones: **Encender / apagar**, **Modo**, **Efecto**, **Color**, **Brillo** (subir, bajar o fijo; con el dial en el Stream Deck +) y **Ecualizador** (una combinación o ir cambiando). Las teclas muestran el estado en vivo (escuchan el WebSocket de Ledly), así que también cambian si tocas algo desde la app o la API. Por defecto se conecta a `http://localhost:8765`; la URL y el token se cambian en cualquier tecla, en «Conexión con Ledly».
+Hay un plugin de Stream Deck (`com.mrdrarek.ledly.sdPlugin`, en [drarekx/streamdeck-plugins](https://github.com/drarekx/streamdeck-plugins)) con seis acciones: **Encender / apagar**, **Modo**, **Efecto**, **Color**, **Brillo** (subir, bajar o fijo; con el dial en el Stream Deck +) y **Ecualizador** (una combinación o ir cambiando). Las teclas muestran el estado en vivo (escuchan el WebSocket de Ledly), así que también cambian si tocas algo desde la app o la API. Por defecto se conecta a `http://localhost:8765`; la URL y el token se cambian en cualquier tecla, en «Conexión con Ledly».
 
 ## API
 
