@@ -86,6 +86,8 @@ final class Settings: ObservableObject {
     @Published var redGain: Double { didSet { defaults.set(redGain, forKey: "redGain") } }
     @Published var greenGain: Double { didSet { defaults.set(greenGain, forKey: "greenGain") } }
     @Published var blueGain: Double { didSet { defaults.set(blueGain, forKey: "blueGain") } }
+    /// Target color per corner of the RGB cube.
+    @Published var calibration: ColorCalibration { didSet { save(calibration, "calibration") } }
 
     // API
     @Published var apiEnabled: Bool { didSet { defaults.set(apiEnabled, forKey: "apiEnabled") } }
@@ -168,6 +170,7 @@ final class Settings: ObservableObject {
         redGain = defaults.double(forKey: "redGain")
         greenGain = defaults.double(forKey: "greenGain")
         blueGain = defaults.double(forKey: "blueGain")
+        calibration = defaults.data(forKey: "calibration").flatMap { try? JSONDecoder().decode(ColorCalibration.self, from: $0) } ?? ColorCalibration()
         apiEnabled = defaults.bool(forKey: "apiEnabled")
         apiPort = defaults.integer(forKey: "apiPort")
         apiLocalOnly = defaults.bool(forKey: "apiLocalOnly")
@@ -201,6 +204,7 @@ final class Settings: ObservableObject {
         a.redGain = Float(redGain)
         a.greenGain = Float(greenGain)
         a.blueGain = Float(blueGain)
+        a.calibration = calibration.prepared()
         a.prepare()
         return a
     }

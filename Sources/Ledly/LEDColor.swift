@@ -85,6 +85,9 @@ struct ColorAdjustments: Equatable {
     var greenGain: Float = 1
     var blueGain: Float = 1
 
+    /// Advanced calibration (corners of the RGB cube); nil when off.
+    var calibration: PreparedCalibration?
+
     /// Precomputed white-balance multipliers.
     private(set) var whiteBalance = RGB.white
 
@@ -94,6 +97,8 @@ struct ColorAdjustments: Equatable {
 
     func apply(_ input: RGB, useBacklight: Bool) -> RGB {
         var c = input.clamped()
+        // Calibration first: it describes the strip, so the rest works on corrected colors.
+        if let calibration { c = calibration.apply(c) }
         if saturation != 1 {
             let grey = c.luminance
             c = RGB(r: grey + (c.r - grey) * saturation,

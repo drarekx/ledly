@@ -38,6 +38,8 @@ enum TestPattern: Equatable {
     case direction
     /// One color per side of the screen.
     case sides
+    /// The whole strip shows this input color through the color correction (calibration).
+    case calibration(RGB)
 }
 
 /// Drives the strip: picks the source, smooths, corrects colors and sends frames to the device.
@@ -501,6 +503,12 @@ final class OutputLoop {
                 case .left: return RGB(r: 1, g: 1, b: 0) * dim
                 }
             }
+        case .calibration(let color):
+            // Same path as effects and solid colors: calibration, white balance, gains, brightness.
+            var a = config.adjustments
+            a.gamma = 1
+            a.saturation = 1
+            return Array(repeating: a.apply(color, useBacklight: false), count: n)
         }
     }
 }

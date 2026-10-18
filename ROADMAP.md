@@ -23,7 +23,9 @@ Orden de trabajo. Marcar `[x]` al terminar y anotar lo que haya costado en CLAUD
 - [ ] **Capturar una ventana o app** en vez de toda la pantalla.
 - [ ] **Asistentes**: disposición (LED a LED) y balance de blancos.
 - [ ] **Vista de la captura** con las zonas de cada LED encima.
-- [ ] **HDR**: captura HDR y mapeo de tonos para la tira.
+- [ ] **HDR**: captura HDR y mapeo de tonos para la tira. En espera: las tres pantallas actuales son SDR (macOS ya convierte el HDR a SDR antes de mostrarlo), así que no aportaría nada. Tiene sentido con una pantalla HDR o con una capturadora HDMI (señal HDR10 «lavada», que es para lo que lo usa HyperHDR).
+- [x] **Efectos de HyperHDR que faltaban**: remolino atómico, ondas de color, manchas azules/verdes/rojas/frías/cálidas, policía fija, cine (encender/apagar), aviso y apagado del sistema. Añadidos al final de la lista para no mover los números de WLED; en la app salen agrupados.
+- [x] **Calibración avanzada**: color objetivo de cada esquina del cubo RGB (rojo, verde, azul, cian, magenta, amarillo, blanco, negro) con interpolación trilineal y botón «Probar» que enciende ese color en la tira. Se aplica a todo (pantalla, efectos, color, DDP).
 - [x] **Firmware desactualizado**: avisar y ofrecer reinstalar cuando el Nano lleva una versión anterior.
 
 ## Fase 4 — Preparar Windows (futuro)

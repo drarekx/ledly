@@ -335,6 +335,8 @@ struct ImagePane: View {
                 SliderRow(title: tr("Azul"), value: $settings.blueGain, range: 0...1)
             }
             .ledlyCard()
+
+            CalibrationCard()
         }
         .task {
             displays = NSScreen.screens.compactMap { screen in
@@ -342,6 +344,88 @@ struct ImagePane: View {
                 return (id, screen.localizedName)
             }
         }
+    }
+}
+
+/// Advanced calibration: target color per corner of the RGB cube, each one testable on the strip.
+private struct CalibrationCard: View {
+    @ObservedObject private var settings = Settings.shared
+    @ObservedObject private var engine = LEDEngine.shared
+    @State private var testing: CalibrationCorner?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                SectionLabel(tr("Calibración avanzada"))
+                Spacer()
+                Button(tr("Restablecer")) {
+                    settings.calibration.targets = [:]
+                    if let testing { test(testing) }
+                }
+                .buttonStyle(.ledlyGhost)
+                .disabled(settings.calibration.isIdentity)
+            }
+            SwitchRow(title: tr("Activar calibración avanzada"),
+                      detail: tr("Corrige cómo saca la tira cada color. Pulsa «Probar», compara el LED con la muestra de la pantalla y ajusta el color de la derecha hasta que se parezcan. Los colores intermedios se ajustan solos."),
+                      isOn: $settings.calibration.enabled)
+            if settings.calibration.enabled {
+                ForEach(CalibrationCorner.allCases) { corner in
+                    row(corner)
+                }
+                if testing != nil {
+                    Button(tr("Terminar prueba")) { stopTest() }.buttonStyle(.ledlyPrimary)
+                }
+            }
+        }
+        .ledlyCard()
+        .onDisappear { stopTest() }
+        .onChange(of: settings.calibration.enabled) { _, on in if !on { stopTest() } }
+    }
+
+    private func row(_ corner: CalibrationCorner) -> some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 5).fill(corner.input.swiftUI)
+                .frame(width: 34, height: 22)
+                .overlay { RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.lineStrong) }
+                .help(tr("Color en pantalla"))
+            Text(corner.title).frame(width: 90, alignment: .leading)
+            Image(systemName: "arrow.right").foregroundStyle(Theme.text3)
+            ColorPicker("", selection: binding(corner), supportsOpacity: false).labelsHidden()
+                .help(tr("Color que debe dar la tira"))
+            Text(settings.calibration.target(corner).hex).monospacedText(size: 11).foregroundStyle(Theme.text3)
+            Spacer()
+            if settings.calibration.target(corner) != corner.input {
+                IconButton(symbol: "arrow.uturn.backward", label: tr("Restablecer")) {
+                    settings.calibration.setTarget(corner.input, for: corner)
+                    if testing == corner { test(corner) }
+                }
+            }
+            Button(testing == corner ? tr("Probando") : tr("Probar")) { test(corner) }
+                .buttonStyle(SelectableButtonStyle(selected: testing == corner))
+        }
+    }
+
+    private func binding(_ corner: CalibrationCorner) -> Binding<Color> {
+        Binding(
+            get: { settings.calibration.target(corner).swiftUI },
+            set: { color in
+                guard let ns = NSColor(color).usingColorSpace(.sRGB) else { return }
+                settings.calibration.setTarget(RGB(r: Float(ns.redComponent), g: Float(ns.greenComponent),
+                                                   b: Float(ns.blueComponent)), for: corner)
+                // Keep the strip showing the corner being tuned.
+                test(corner)
+            })
+    }
+
+    private func test(_ corner: CalibrationCorner) {
+        testing = corner
+        // The engine re-applies the pattern every frame, so target changes show as soon as they arrive.
+        engine.testPattern = .calibration(corner.input)
+    }
+
+    private func stopTest() {
+        if case .calibration = engine.testPattern { engine.testPattern = nil }
+        testing = nil
     }
 }
 

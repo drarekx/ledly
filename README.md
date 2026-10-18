@@ -32,8 +32,8 @@ Requisitos: macOS 14 (Sonoma) o posterior, Apple Silicon o Intel. Un Arduino Nan
 
 ## Qué hace
 
-- **Pantalla (ambilight)**: color de cada zona del borde (media, lineal o dominante), ignora las franjas negras de las películas, suavizado (exponencial o tipo muelle), anti-parpadeo en escenas oscuras, gamma, saturación, temperatura, luz mínima y ganancia por canal.
-- **Efectos**: remolinos y ondas arcoíris, respiración, vela, fuego, coche fantástico, policía, estroboscopio, chispas, manchas de color, olas, plasma, serpiente, barrido, Navidad, reloj, aurora y meteoro, con velocidad y color.
+- **Pantalla (ambilight)**: color de cada zona del borde (media, lineal o dominante), ignora las franjas negras de las películas, suavizado (exponencial o tipo muelle), anti-parpadeo en escenas oscuras, gamma, saturación, temperatura, luz mínima, ganancia por canal y **calibración avanzada** (color exacto de rojo, verde, azul, cian, magenta, amarillo, blanco y negro, probándolo en la tira).
+- **Efectos**: todos los de HyperHDR (remolinos arcoíris, doble y atómico, ondas, olas, manchas de color en seis tonos, respiración, vela, coche fantástico, policía, estroboscopio, chispas, plasma, cine, aviso, apagado del sistema) y más (fuego, serpiente, barrido, Navidad, reloj, aurora, meteoro), con velocidad y color.
 - **Música**: pulso, ondas, vúmetro y un **ecualizador** con 100 combinaciones (disposición × estilo × colores, incluido estéreo) y combinaciones rápidas. Usa el audio del Mac, sin instalar nada.
 - **Color fijo** con muestras rápidas.
 - **Arduino Nano**: detecta el puerto, instala y actualiza el firmware, reconecta solo. Hasta 400 LEDs (300 LEDs a ~46 fps).

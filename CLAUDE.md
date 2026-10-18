@@ -47,6 +47,7 @@ git tag v1.1.0 && git push origin v1.1.0
 | `Flasher.swift` | STK500 v1 (Optiboot 115200 / ATmegaBOOT 57600): firma, copia de seguridad, escritura y verificación; Intel HEX |
 | `ScreenGrabber.swift` | ScreenCaptureKit a 256 px de ancho, media por zona (media / lineal / dominante), detector de bordes negros |
 | `LEDLayout.swift` | Disposición (LEDs por lado, esquina, sentido, desplazamiento, hueco del pie) → zonas ordenadas |
+| `Calibration.swift` | Calibración avanzada: objetivo por esquina del cubo RGB, interpolación trilineal (`PreparedCalibration`), primer paso de `ColorAdjustments.apply` |
 | `LEDColor.swift` | `RGB`, HSV, `ColorAdjustments` (brillo, gamma, saturación, temperatura, luz mínima, ganancias) |
 | `AudioAnalyzer.swift` | Audio del sistema con ScreenCaptureKit (sin salida de vídeo), FFT con Accelerate → `AudioLevels` (16 bandas, nivel, graves, golpe). `AudioLevels.demo` alimenta las vistas previas |
 | `Equalizer.swift` | Ecualizador configurable (`EqualizerOptions`: disposición × estilo × colores + sensibilidad, combinaciones rápidas) y `EqualizerRenderer`, usado por `EffectKind.musicSpectrum` |
@@ -67,7 +68,7 @@ Copias del firmware anterior: `~/Library/Application Support/Ledly/Backups/`.
 - **Todo texto visible pasa por `tr("…")`**; la clave es el castellano y va en las tablas `en` y `ca` con los mismos `%@`/`%d`. Los nombres de efectos son claves (`EffectKind.titleKey`); para WLED se envían en inglés (`trEnglish`).
 - Estilo: `Theme` y sus componentes (`LedlyButtonStyle`, `SegmentedControl`, `SwitchRow`, `ledlyCard`…).
 - El estado de la UI es `@MainActor`; el bucle de salida, la captura y el puerto serie viven en sus colas. La API aplica cambios sobre `Settings` en el hilo principal.
-- La API y los ajustes guardados usan los `rawValue` de `LightMode`/`EffectKind`: no renombrarlos.
+- La API y los ajustes guardados usan los `rawValue` de `LightMode`/`EffectKind`: no renombrarlos. Los efectos nuevos se añaden **al final** del `enum` (el número de efecto WLED es su posición) y en su sitio en `EffectKind.ordered`, que es el orden de la app, los menús y `/api/effects`.
 
 ## Cosas que ya costaron (no repetir)
 
