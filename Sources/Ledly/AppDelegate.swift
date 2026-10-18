@@ -144,7 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let effectsItem = menu.addItem(withTitle: tr("Efectos"), action: nil, keyEquivalent: "")
         let effects = NSMenu()
-        for effect in EffectKind.allCases {
+        for effect in EffectKind.ordered {
             let item = effects.addItem(withTitle: effect.title, action: #selector(selectEffect(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = effect.rawValue

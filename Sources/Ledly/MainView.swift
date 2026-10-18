@@ -507,7 +507,7 @@ private struct EffectsPane: View {
             }
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 12)], spacing: 12) {
-                ForEach(EffectKind.allCases) { effect in
+                ForEach(EffectKind.ordered) { effect in
                     EffectCard(effect: effect, selected: settings.mode == .effect && settings.effect == effect) {
                         settings.effect = effect
                         settings.mode = .effect

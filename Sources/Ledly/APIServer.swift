@@ -155,7 +155,7 @@ final class APIServer: ObservableObject {
             if let error = applyNative(body) { return .json(["error": error], status: 400) }
             return .json(nativeState())
         case ("GET", "/api/effects"):
-            return .json(EffectKind.allCases.map { ["id": $0.rawValue, "name": $0.title, "usesColor": $0.usesColor] })
+            return .json(EffectKind.ordered.map { ["id": $0.rawValue, "name": $0.title, "usesColor": $0.usesColor] })
         case ("GET", "/api/leds"):
             let colors = LEDEngine.shared.currentColors()
             return .json(["count": colors.count, "colors": colors.map(\.hex)])

@@ -5,7 +5,20 @@ import Foundation
 enum EffectKind: String, CaseIterable, Identifiable, Codable {
     case rainbowSwirl, doubleSwirl, rainbowWaves, rainbowMood, breath, candle, fire, knightRider, police, strobe,
          sparks, moodBlobs, seaWaves, plasma, snake, colorWipe, christmas, lightClock, aurora, meteor,
-         musicPulse, musicSpectrum, musicWaves, musicMeter
+         musicPulse, musicSpectrum, musicWaves, musicMeter,
+         // Added later; appended so earlier WLED effect numbers don't move.
+         atomicSwirl, colorWaves, moodBlue, moodGreen, moodRed, moodCold, moodWarm,
+         policeSolid, cinemaBrighten, cinemaDim, notify, shutdown
+
+    /// Order shown in the app and the menus: related effects together.
+    static let ordered: [EffectKind] = [
+        .rainbowSwirl, .doubleSwirl, .atomicSwirl, .rainbowWaves, .rainbowMood, .colorWaves, .seaWaves,
+        .moodBlobs, .moodBlue, .moodGreen, .moodRed, .moodCold, .moodWarm,
+        .breath, .candle, .fire, .aurora, .plasma, .knightRider, .snake, .meteor, .colorWipe, .sparks,
+        .police, .policeSolid, .strobe, .notify, .christmas, .lightClock,
+        .cinemaBrighten, .cinemaDim, .shutdown,
+        .musicPulse, .musicSpectrum, .musicWaves, .musicMeter,
+    ]
 
     var id: String { rawValue }
 
@@ -38,6 +51,18 @@ enum EffectKind: String, CaseIterable, Identifiable, Codable {
         case .musicSpectrum: return "Ecualizador"
         case .musicWaves: return "Ondas musicales"
         case .musicMeter: return "Vúmetro"
+        case .atomicSwirl: return "Remolino atómico"
+        case .colorWaves: return "Ondas de color"
+        case .moodBlue: return "Manchas azules"
+        case .moodGreen: return "Manchas verdes"
+        case .moodRed: return "Manchas rojas"
+        case .moodCold: return "Manchas frías"
+        case .moodWarm: return "Manchas cálidas"
+        case .policeSolid: return "Policía (fija)"
+        case .cinemaBrighten: return "Cine: encender"
+        case .cinemaDim: return "Cine: apagar"
+        case .notify: return "Aviso"
+        case .shutdown: return "Apagado del sistema"
         }
     }
 
@@ -67,6 +92,14 @@ enum EffectKind: String, CaseIterable, Identifiable, Codable {
         case .musicSpectrum: return "chart.bar.fill"
         case .musicWaves: return "dot.radiowaves.left.and.right"
         case .musicMeter: return "gauge.with.needle"
+        case .atomicSwirl: return "atom"
+        case .colorWaves: return "wave.3.forward"
+        case .moodBlue, .moodGreen, .moodRed, .moodCold, .moodWarm: return "circle.hexagongrid.fill"
+        case .policeSolid: return "light.beacon.min"
+        case .cinemaBrighten: return "sun.max"
+        case .cinemaDim: return "sun.min"
+        case .notify: return "bell"
+        case .shutdown: return "power"
         }
     }
 
@@ -81,7 +114,7 @@ enum EffectKind: String, CaseIterable, Identifiable, Codable {
     /// Effects that use the main color.
     var usesColor: Bool {
         switch self {
-        case .breath, .knightRider, .strobe, .sparks, .snake, .colorWipe, .meteor: return true
+        case .breath, .knightRider, .strobe, .sparks, .snake, .colorWipe, .meteor, .colorWaves, .notify: return true
         default: return false
         }
     }
@@ -222,18 +255,17 @@ final class EffectRenderer {
             }
 
         case .moodBlobs:
-            // Three hue blobs slowly orbit the screen.
-            for i in 0..<n {
-                var acc = RGB.black
-                for b in 0..<3 {
-                    let center = (Float(b) / 3 + t * 0.02 * Float(b + 1)).truncatingRemainder(dividingBy: 1)
-                    var d = abs(angles[i] - center)
-                    d = min(d, 1 - d)
-                    let w = max(0, 1 - d * 4)
-                    acc = acc + RGB(hue: t * 0.01 + Float(b) * 0.33) * (w * w)
-                }
-                out[i] = acc.clamped()
-            }
+            moodBlobs(&out, t: t, blobs: 3, hue: { b in t * 0.01 + Float(b) * 0.33 }, saturation: 1)
+        case .moodBlue:
+            moodBlobs(&out, t: t, blobs: 5, hue: { b in 0.6 + 0.07 * sin(t * 0.05 + Float(b) * 1.3) }, saturation: 0.9)
+        case .moodGreen:
+            moodBlobs(&out, t: t, blobs: 5, hue: { b in 0.33 + 0.07 * sin(t * 0.05 + Float(b) * 1.3) }, saturation: 0.9)
+        case .moodRed:
+            moodBlobs(&out, t: t, blobs: 5, hue: { b in 0.99 + 0.04 * sin(t * 0.05 + Float(b) * 1.3) }, saturation: 0.95)
+        case .moodCold:
+            moodBlobs(&out, t: t, blobs: 5, hue: { b in 0.58 + 0.12 * sin(t * 0.05 + Float(b) * 1.3) }, saturation: 0.8)
+        case .moodWarm:
+            moodBlobs(&out, t: t, blobs: 5, hue: { b in 0.05 + 0.05 * sin(t * 0.05 + Float(b) * 1.3) }, saturation: 0.95)
 
         case .seaWaves:
             for i in 0..<n {
@@ -310,6 +342,55 @@ final class EffectRenderer {
             for k in 0..<3 { levels[(head + k) % n] = 1 }
             for i in 0..<n { out[i] = color.mix(.white, levels[i] > 0.95 ? 0.6 : 0) * levels[i] }
 
+        case .atomicSwirl:
+            // Three narrow white-blue arcs spinning round the frame on a dark base.
+            for i in 0..<n {
+                let a = (angles[i] - t * 0.04) * 3 * 2 * .pi
+                let v = pow(max(0, cos(a)), 8)
+                let tint = RGB(r: 0.55, g: 0.75, b: 1).mix(.white, (sin(t * 0.5 + angles[i] * 6) + 1) / 2)
+                out[i] = tint * v + RGB(r: 0, g: 0.01, b: 0.04)
+            }
+
+        case .colorWaves:
+            for i in 0..<n {
+                let v = (sin((angles[i] * 3 - t * 0.3) * 2 * .pi) + 1) / 2
+                out[i] = color * (0.12 + 0.88 * v * v)
+            }
+
+        case .policeSolid:
+            // Halves swap red and blue, no flashing.
+            let swap = Int(t * 2) % 2 == 0
+            let red = RGB(r: 1, g: 0, b: 0), blue = RGB(r: 0, g: 0.1, b: 1)
+            for i in 0..<n { out[i] = (zones[i].position.x < 0.5) == swap ? red : blue }
+
+        case .cinemaBrighten, .cinemaDim:
+            // Five-second fade to (or from) warm white, then it stays.
+            let warm = RGB(r: 1, g: 0.62, b: 0.3)
+            let p = min(1, elapsed(time) * Float(speed) / 5)
+            let eased = p * p * (3 - 2 * p)
+            let level = kind == .cinemaBrighten ? eased : 1 - eased
+            for i in 0..<n { out[i] = warm * level }
+
+        case .notify:
+            // Three quick flashes, then a pause; repeats every 3 s.
+            let e = (elapsed(time) * Float(speed)).truncatingRemainder(dividingBy: 3)
+            let on = e < 1.2 && e.truncatingRemainder(dividingBy: 0.4) < 0.2
+            for i in 0..<n { out[i] = on ? color : .black }
+
+        case .shutdown:
+            // Red sweep round the strip, two blinks, then off.
+            let e = elapsed(time) * Float(speed)
+            let red = RGB(r: 1, g: 0, b: 0)
+            for i in 0..<n {
+                if e < 1.5 {
+                    out[i] = Float(i) / Float(n) < e / 1.5 ? red : .black
+                } else if e < 2.5 {
+                    out[i] = (e - 1.5).truncatingRemainder(dividingBy: 0.5) < 0.25 ? red : .black
+                } else if e < 3.5 {
+                    out[i] = red * (3.5 - e)
+                }
+            }
+
         case .musicPulse:
             // The whole frame breathes with the bass; each beat nudges the hue.
             let hue = Float(time) * 0.02 * Float(speed) + wavesHueShift
@@ -355,6 +436,28 @@ final class EffectRenderer {
     }
 
     private var wavesHueShift: Float = 0
+    private var firstTime: Double?
+
+    /// Seconds since this effect started (one-shot effects like the cinema fades).
+    private func elapsed(_ time: Double) -> Float {
+        if firstTime == nil { firstTime = time }
+        return Float(time - firstTime!)
+    }
+
+    /// Soft colored blobs drifting round the frame.
+    private func moodBlobs(_ out: inout [RGB], t: Float, blobs: Int, hue: (Int) -> Float, saturation: Float) {
+        for i in out.indices {
+            var acc = RGB.black
+            for b in 0..<blobs {
+                let center = (Float(b) / Float(blobs) + t * 0.02 * Float(b % 3 + 1)).truncatingRemainder(dividingBy: 1)
+                var d = abs(angles[i] - center)
+                d = min(d, 1 - d)
+                let w = max(0, 1 - d * Float(blobs) * 1.3)
+                acc = acc + RGB(hue: hue(b), saturation: saturation) * (w * w)
+            }
+            out[i] = acc.clamped()
+        }
+    }
     private var equalizerRenderer: EqualizerRenderer?
 
     /// Smooths the raw levels: rises at once, falls over ~150 ms (bands) or ~250 ms (bass, level).
