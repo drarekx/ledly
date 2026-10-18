@@ -42,6 +42,10 @@ Requisitos: macOS 14 (Sonoma) o posterior, Apple Silicon o Intel. Un Arduino Nan
 - Apagado al dormir el Mac, abrir al iniciar sesión, menú de barra con modos, efectos y brillo.
 - **Idiomas**: castellano, inglés y catalán (Ajustes → Idioma; por defecto, el del sistema).
 
+## Stream Deck
+
+Hay un plugin de Stream Deck (`com.mrdrarek.ledly.sdPlugin`, en el repo de plugins) con seis acciones: **Encender / apagar**, **Modo**, **Efecto**, **Color**, **Brillo** (subir, bajar o fijo; con el dial en el Stream Deck +) y **Ecualizador** (una combinación o ir cambiando). Las teclas muestran el estado en vivo (escuchan el WebSocket de Ledly), así que también cambian si tocas algo desde la app o la API. Por defecto se conecta a `http://localhost:8765`; la URL y el token se cambian en cualquier tecla, en «Conexión con Ledly».
+
 ## API
 
 Por defecto en el puerto `8765` (Ajustes → API). La documentación completa, con un botón para probar cada ruta, está en la propia app: **http://localhost:8765/api/docs**. La especificación OpenAPI 3.0 está en `/api/openapi.json`. Con token, las rutas `/api` piden `Authorization: Bearer <token>` (o `?token=`).

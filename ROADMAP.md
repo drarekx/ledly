@@ -14,7 +14,8 @@ Orden de trabajo. Marcar `[x]` al terminar y anotar lo que haya costado en CLAUD
 
 - [x] **Efectos con música**: audio del sistema por ScreenCaptureKit (mismo permiso) + FFT de 1024 muestras con Accelerate, 16 bandas con ganancia automática, graves y golpes. Efectos: Pulso musical, Ecualizador, Ondas musicales, Vúmetro. La captura de audio solo corre con un efecto de música activo (CPU ~1,7 %). `audio` en `/api/state`.
 - [x] **Ecualizador configurable**: disposición (desde abajo, desde arriba, estéreo, anillo, cuatro espejos) × estilo (espectro, barras, nivel, destellos) × colores (arcoíris, fijo, calor, semáforo, ciclo) = 100 combinaciones, más 8 combinaciones rápidas y sensibilidad. Análisis por canal para el estéreo. En la API: `"equalizer": {…}`.
-- [ ] **Stream Deck y Atajos**: acciones de Atajos de macOS (App Intents) y botones para el Stream Deck.
+- [x] **Plugin de Stream Deck** (`~/dev/streamdeck-plugins/com.mrdrarek.ledly.sdPlugin`): encender/apagar, modo, efecto, color, brillo (con dial en Stream Deck +) y ecualizador; estado en vivo por el WebSocket de Ledly.
+- [ ] **Enlaces `ledly://` y Atajos**: `ledly://effect/fire`, `ledly://toggle`… para Atajos, Raycast, Alfred y la acción «Website» del Stream Deck; acciones nativas de Atajos (App Intents) si macOS las reconoce sin Xcode.
 - [x] **Tiempo real por DDP** (UDP 4048): fotogramas en uno o varios paquetes con push, prioridad sobre todo salvo apagado, vuelta sola a los 2,5 s, `{"live": false}` para soltar al momento (ignora 1 s de paquetes retrasados), `live`/`liveSource` en `/api/state`, compatible con el `live` de WLED. Probado desde la red y desde un contenedor (Colima, `host.docker.internal`).
 - [ ] **Más protocolos de red**: WLED UDP (DRGB/DNRGB, puerto 21324), E1.31/Art-Net, servidor Hyperion. Para LedFx, xLights, HyperHDR en la tele.
 
