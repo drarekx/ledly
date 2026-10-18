@@ -1,9 +1,10 @@
 name: Release
 
-# Push a tag like v1.2.0 to build Ledly.app (universal) and publish it as a GitHub release.
+# Releases are published from the Mac with ./release.sh, signed with the Apple Development
+# certificate (an ad-hoc CI build would make macOS ask for Screen Recording after every update).
+# This workflow is only a manual fallback: run it from Actions to get an ad-hoc build artifact,
+# or with a tag selected to publish an ad-hoc release.
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:

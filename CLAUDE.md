@@ -21,10 +21,14 @@ VERSION=1.1.0 ./build-app.sh
 ## Publicar una versión
 
 ```sh
-git tag v1.1.0 && git push origin v1.1.0
+./release.sh 1.1.0
 ```
 
-`.github/workflows/release.yml` (macos-15) compila con `VERSION` = tag y crea el release con `Ledly.zip` y `Ledly.zip.sha256`. Las apps instaladas se actualizan solas (`Updater.swift`, `releases/latest`). Instalador: `install.sh` (`curl … | bash`); no instala dependencias. En CI no hay certificado: la app sale con firma ad-hoc. `.github/workflows/build.yml` compila arm64 + x86_64 y comprueba las traducciones en cada push y PR.
+Desde este Mac, en `main` limpio e igual que `origin/main`, con la compilación de GitHub en verde: compila universal **firmado con el certificado Apple Development**, comprueba firma y versión, crea y sube la etiqueta `v1.1.0` y el release con `Ledly.zip` y `Ledly.zip.sha256`. Las apps instaladas se actualizan solas (`Updater.swift`, `releases/latest`); como la firma es la misma, macOS conserva el permiso de Grabación de pantalla. Instalador: `install.sh` (`curl … | bash`).
+
+- No publicar con CI: no tiene el certificado y firmaría ad-hoc, y cada actualización volvería a pedir el permiso. `.github/workflows/release.yml` solo se lanza a mano como plan B.
+- `.github/workflows/build.yml` compila arm64 + x86_64 y comprueba las traducciones en cada push y PR.
+- La v1.0.0 salió de CI (ad-hoc); las copias instaladas con ella pedirán el permiso una vez al pasar a la siguiente.
 
 ## Firmware (`firmware/`)
 
