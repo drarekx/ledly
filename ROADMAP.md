@@ -26,6 +26,17 @@ Orden de trabajo. Marcar `[x]` al terminar y anotar lo que haya costado en CLAUD
 - [ ] **HDR**: captura HDR y mapeo de tonos para la tira.
 - [x] **Firmware desactualizado**: avisar y ofrecer reinstalar cuando el Nano lleva una versión anterior.
 
+## Fase 4 — Preparar Windows (futuro)
+
+Objetivo: que un port a Windows sea escribir unas pocas piezas por plataforma, no rehacer la app.
+
+- [ ] **Núcleo sin Apple** (`LedlyCore`, paquete Swift aparte): efectos, ecualizador, suavizado, anti-parpadeo, consumo, disposición, colores, protocolo Adalight con confirmación, instalador STK500, lógica de API/WLED/DDP, traducciones. La app de Mac lo usa igual que ahora.
+- [ ] **Interfaces por plataforma** para lo que cambia: captura de pantalla, audio del sistema, puerto serie y lista de puertos, sockets HTTP/WebSocket/UDP, ajustes, inicio de sesión, actualizador.
+- [ ] **Interfaz web** servida por la propia API (como `/api/docs`): la misma en Mac y Windows; la app nativa queda en icono de barra/bandeja + ventana que la muestra.
+- [ ] **Port a Windows**: Swift para Windows con DXGI Desktop Duplication (pantalla), WASAPI loopback (audio), puertos COM de Win32, icono en la bandeja y su propio instalador/actualizador.
+
+Mientras tanto, en Windows la tira funciona con HyperHDR o Prismatik (Adalight a 1 000 000 baudios), sin la confirmación por fotograma.
+
 ## Descartado
 
 - **Escenas y horarios** (guardar combinaciones y aplicarlas por hora): no se quiere.
